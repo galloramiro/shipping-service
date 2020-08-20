@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+from freezegun import freeze_time
 from requests import Response
 
 from services.shipping_service import ShippingGateway, ShippingService
@@ -109,6 +110,111 @@ def test_shipping_service_different_days_different_costs():
         dict(name="Option 2", type="Custom", cost=5, estimated_days=3),
         dict(name="Option 3", type="Pickup", cost=7, estimated_days=2),
         dict(name="Option 1", type="Delivery", cost=10, estimated_days=5),
+    ])
+
+    assert best_shippings == expected_best_shippings
+
+
+
+@freeze_time('2020-08-04')
+def test_shipping_service_estimated_days_to_estimated_date():
+    gateway = Mock(spec_set=ShippingGateway)
+    expected_json = dict(shipping_options=[
+        dict(name="Option 1", type="Delivery", cost=10, estimated_days=3),
+        dict(name="Option 2", type="Custom", cost=5, estimated_days=3),
+        dict(name="Option 3", type="Pickup", cost=7, estimated_days=2),
+    ])
+    stations_response = Mock(spec_set=Response)
+    stations_response.json.return_value = expected_json
+
+    gateway.get_shipping_options.return_value = stations_response
+
+    shipping_service = ShippingService(gateway=gateway)
+
+    best_shippings = shipping_service.get_best_shippings()
+
+    expected_best_shippings = dict(shipping_options=[
+        dict(name="Option 1", type="Delivery", cost=10, estimated_days="2020-08-07 00:00:00"),
+        dict(name="Option 2", type="Custom", cost=10, estimated_days="2020-08-07 00:00:00"),
+        dict(name="Option 3", type="Pickup", cost=10, estimated_days="2020-08-07 00:00:00"),
+    ])
+
+    assert best_shippings == expected_best_shippings
+
+
+@freeze_time('2020-08-04')
+def test_shipping_service_estimated_date_to_estimated_days():
+    gateway = Mock(spec_set=ShippingGateway)
+    expected_json = dict(shipping_options=[
+        dict(name="Option 1", type="Delivery", cost=10, estimated_days="2020-08-13 00:00:00"),
+        dict(name="Option 2", type="Custom", cost=10, estimated_days="2020-08-07 00:00:00"),
+        dict(name="Option 3", type="Pickup", cost=10, estimated_days="2020-08-07 00:00:00"),
+    ])
+    stations_response = Mock(spec_set=Response)
+    stations_response.json.return_value = expected_json
+
+    gateway.get_shipping_options.return_value = stations_response
+
+    shipping_service = ShippingService(gateway=gateway)
+
+    best_shippings = shipping_service.get_best_shippings()
+
+    expected_best_shippings = dict(shipping_options=[
+        dict(name="Option 2", type="Custom", cost=10, estimated_days=3),
+        dict(name="Option 3", type="Pickup", cost=10, estimated_days=3),
+        dict(name="Option 1", type="Delivery", cost=10, estimated_days=7),
+    ])
+
+    assert best_shippings == expected_best_shippings
+
+
+@freeze_time('2020-08-04')
+def test_shipping_service_estimated_date_to_estimated_date():
+    gateway = Mock(spec_set=ShippingGateway)
+    expected_json = dict(shipping_options=[
+        dict(name="Option 1", type="Delivery", cost=6, estimated_days="2020-08-10 00:00:00"),
+        dict(name="Option 2", type="Custom", cost=5, estimated_days="2020-08-10 00:00:00"),
+        dict(name="Option 3", type="Pickup", cost=10, estimated_days="2020-08-10 00:00:00"),
+    ])
+    stations_response = Mock(spec_set=Response)
+    stations_response.json.return_value = expected_json
+
+    gateway.get_shipping_options.return_value = stations_response
+
+    shipping_service = ShippingService(gateway=gateway)
+
+    best_shippings = shipping_service.get_best_shippings()
+
+    expected_best_shippings = dict(shipping_options=[
+        dict(name="Option 2", type="Custom", cost=5, estimated_days="2020-08-10 00:00:00"),
+        dict(name="Option 1", type="Delivery", cost=6, estimated_days="2020-08-10 00:00:00"),
+        dict(name="Option 3", type="Pickup", cost=10, estimated_days="2020-08-10 00:00:00"),
+    ])
+
+    assert best_shippings == expected_best_shippings
+
+
+@freeze_time('2020-08-04')
+def test_shipping_service_estimated_date_to_estimated_date():
+    gateway = Mock(spec_set=ShippingGateway)
+    expected_json = dict(shipping_options=[
+        dict(name="Option 1", type="Delivery", cost=10, estimated_days=6),
+        dict(name="Option 2", type="Custom", cost=5, estimated_days=3),
+        dict(name="Option 3", type="Pickup", cost=7, estimated_days=2),
+    ])
+    stations_response = Mock(spec_set=Response)
+    stations_response.json.return_value = expected_json
+
+    gateway.get_shipping_options.return_value = stations_response
+
+    shipping_service = ShippingService(gateway=gateway)
+
+    best_shippings = shipping_service.get_best_shippings()
+
+    expected_best_shippings = dict(shipping_options=[
+        dict(name="Option 2", type="Custom", cost=5, estimated_days=3),
+        dict(name="Option 3", type="Pickup", cost=7, estimated_days=2),
+        dict(name="Option 1", type="Delivery", cost=10, estimated_days=6),
     ])
 
     assert best_shippings == expected_best_shippings
